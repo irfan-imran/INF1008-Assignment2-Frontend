@@ -1,522 +1,3 @@
-// import { useEffect, useState } from "react";
-// import L from "leaflet";
-// import {
-//   MapContainer,
-//   Marker,
-//   Polyline,
-//   Popup,
-//   TileLayer,
-//   useMap,
-// } from "react-leaflet";
-
-// const API_BASE_URL =
-//   import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
-// const DEFAULT_CENTER = [1.3521, 103.8198];
-
-// L.Icon.Default.mergeOptions({
-//   iconRetinaUrl:
-//     "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-//   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-//   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-// });
-
-// const homeIcon = new L.Icon({
-//   iconUrl:
-//     "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
-//   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-//   iconSize: [25, 41],
-//   iconAnchor: [12, 41],
-//   popupAnchor: [1, -34],
-//   shadowSize: [41, 41],
-// });
-
-// const friendIcon = new L.Icon({
-//   iconUrl:
-//     "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png",
-//   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-//   iconSize: [25, 41],
-//   iconAnchor: [12, 41],
-//   popupAnchor: [1, -34],
-//   shadowSize: [41, 41],
-// });
-
-// function FitToMarkers({ positions }) {
-//   const map = useMap();
-
-//   useEffect(() => {
-//     if (!positions.length) return;
-
-//     if (positions.length === 1) {
-//       map.setView(positions[0], 15);
-//       return;
-//     }
-
-//     const bounds = L.latLngBounds(positions);
-//     map.fitBounds(bounds, { padding: [40, 40] });
-//   }, [map, positions]);
-
-//   return null;
-// }
-
-// function App() {
-//   const [homePostalCodeInput, setHomePostalCodeInput] = useState("");
-//   const [homePostalCode, setHomePostalCode] = useState(
-//     localStorage.getItem("homePostalCode") || "",
-//   );
-//   const [homeLocation, setHomeLocation] = useState(null);
-
-//   const [friendNameInput, setFriendNameInput] = useState("");
-//   const [friendPostalCodeInput, setFriendPostalCodeInput] = useState("");
-//   const [friends, setFriends] = useState([]);
-
-//   const [routeResult, setRouteResult] = useState(null);
-//   const [loadingHome, setLoadingHome] = useState(false);
-//   const [addingFriend, setAddingFriend] = useState(false);
-//   const [planningRoute, setPlanningRoute] = useState(false);
-//   const [errorMessage, setErrorMessage] = useState("");
-
-//   useEffect(() => {
-//     if (!homePostalCode) return;
-//     setHomePostalCodeInput(homePostalCode);
-//     fetchLocation(homePostalCode, "You", setHomeLocation, setLoadingHome);
-//   }, []);
-
-//   async function callApi(path, options = {}) {
-//     const response = await fetch(`${API_BASE_URL}${path}`, {
-//       headers: {
-//         "Content-Type": "application/json",
-//       },
-//       ...options,
-//     });
-
-//     const data = await response.json().catch(() => ({}));
-
-//     if (!response.ok) {
-//       throw new Error(data.detail || "Something went wrong.");
-//     }
-
-//     return data;
-//   }
-
-//   async function fetchLocation(postalCode, label, setter, loadingSetter) {
-//     setErrorMessage("");
-//     loadingSetter(true);
-
-//     try {
-//       const data = await callApi("/api/geocode", {
-//         method: "POST",
-//         body: JSON.stringify({
-//           postal_code: postalCode,
-//           label,
-//         }),
-//       });
-//       setter(data.location);
-//     } catch (error) {
-//       setter(null);
-//       setErrorMessage(error.message);
-//     } finally {
-//       loadingSetter(false);
-//     }
-//   }
-
-//   async function handleSaveHome(event) {
-//     event.preventDefault();
-
-//     const cleaned = homePostalCodeInput.trim();
-//     if (!cleaned) {
-//       setErrorMessage("Please enter your home postal code first.");
-//       return;
-//     }
-
-//     setHomePostalCode(cleaned);
-//     localStorage.setItem("homePostalCode", cleaned);
-//     setRouteResult(null);
-
-//     await fetchLocation(cleaned, "You", setHomeLocation, setLoadingHome);
-//   }
-
-//   async function handleAddFriend(event) {
-//     event.preventDefault();
-//     setErrorMessage("");
-
-//     const postalCode = friendPostalCodeInput.trim();
-//     const label = friendNameInput.trim() || `Friend ${friends.length + 1}`;
-
-//     if (!postalCode) {
-//       setErrorMessage("Please enter a friend postal code.");
-//       return;
-//     }
-
-//     setAddingFriend(true);
-
-//     try {
-//       const data = await callApi("/api/geocode", {
-//         method: "POST",
-//         body: JSON.stringify({
-//           postal_code: postalCode,
-//           label,
-//         }),
-//       });
-
-//       const location = data.location;
-
-//       setFriends((previous) => {
-//         const exists = previous.some(
-//           (friend) => friend.postal_code === location.postal_code,
-//         );
-
-//         if (exists) {
-//           return previous;
-//         }
-
-//         return [
-//           ...previous,
-//           {
-//             id: `${location.postal_code}-${Date.now()}`,
-//             ...location,
-//           },
-//         ];
-//       });
-
-//       setFriendNameInput("");
-//       setFriendPostalCodeInput("");
-//       setRouteResult(null);
-//     } catch (error) {
-//       setErrorMessage(error.message);
-//     } finally {
-//       setAddingFriend(false);
-//     }
-//   }
-
-//   function handleRemoveFriend(id) {
-//     setFriends((previous) => previous.filter((friend) => friend.id !== id));
-//     setRouteResult(null);
-//   }
-
-//   async function handlePlanRoute() {
-//     setErrorMessage("");
-
-//     if (!homePostalCode) {
-//       setErrorMessage("Set your home postal code first.");
-//       return;
-//     }
-
-//     if (!friends.length) {
-//       setErrorMessage("Add at least one friend before computing the MST.");
-//       return;
-//     }
-
-//     setPlanningRoute(true);
-
-//     try {
-//       const data = await callApi("/api/plan-route", {
-//         method: "POST",
-//         body: JSON.stringify({
-//           home_postal_code: homePostalCode,
-//           home_label: "You",
-//           friends: friends.map((friend) => ({
-//             postal_code: friend.postal_code,
-//             label: friend.label,
-//           })),
-//         }),
-//       });
-
-//       setRouteResult(data);
-//     } catch (error) {
-//       setErrorMessage(error.message);
-//     } finally {
-//       setPlanningRoute(false);
-//     }
-//   }
-
-//   const markerItems = [];
-
-//   if (homeLocation) {
-//     markerItems.push({
-//       ...homeLocation,
-//       kind: "home",
-//     });
-//   }
-
-//   friends.forEach((friend) => {
-//     markerItems.push({
-//       ...friend,
-//       kind: "friend",
-//     });
-//   });
-
-//   const mapPositions = markerItems.map((item) => [
-//     item.latitude,
-//     item.longitude,
-//   ]);
-
-//   if (routeResult && routeResult.polyline_segments) {
-//     routeResult.polyline_segments.forEach((segment) => {
-//       segment.forEach((point) => {
-//         mapPositions.push(point);
-//       });
-//     });
-//   }
-
-//   return (
-//     <div className="page-shell">
-//       <header className="hero-card">
-//         <div>
-//           <p className="eyebrow">INF1008 Demo</p>
-//           <h1>Friend Hitch Ride Planner</h1>
-//           <p className="hero-text">
-//             Enter your postal code once, add your friends, then compute a
-//             minimum spanning tree using Prim&apos;s algorithm. Pins are shown on
-//             the map and the MST construction steps are listed clearly.
-//           </p>
-//         </div>
-//         <div className="hero-badge">Singapore postal codes</div>
-//       </header>
-
-//       <main className="layout-grid">
-//         <section className="panel">
-//           <h2>1. Set your location</h2>
-//           <form onSubmit={handleSaveHome} className="stack-form">
-//             <label>
-//               Your postal code
-//               <input
-//                 type="text"
-//                 value={homePostalCodeInput}
-//                 onChange={(event) => setHomePostalCodeInput(event.target.value)}
-//                 placeholder="e.g. 238801"
-//                 maxLength={6}
-//               />
-//             </label>
-//             <button
-//               type="submit"
-//               className="primary-button"
-//               disabled={loadingHome}
-//             >
-//               {loadingHome ? "Saving..." : "Save home postal code"}
-//             </button>
-//           </form>
-
-//           {homeLocation && (
-//             <div className="info-box success-box">
-//               <strong>Saved:</strong> {homeLocation.label} (
-//               {homeLocation.postal_code})
-//             </div>
-//           )}
-
-//           <h2>2. Add friends</h2>
-//           <form onSubmit={handleAddFriend} className="stack-form">
-//             <label>
-//               Friend name
-//               <input
-//                 type="text"
-//                 value={friendNameInput}
-//                 onChange={(event) => setFriendNameInput(event.target.value)}
-//                 placeholder="Optional"
-//               />
-//             </label>
-//             <label>
-//               Friend postal code
-//               <input
-//                 type="text"
-//                 value={friendPostalCodeInput}
-//                 onChange={(event) =>
-//                   setFriendPostalCodeInput(event.target.value)
-//                 }
-//                 placeholder="e.g. 018956"
-//                 maxLength={6}
-//               />
-//             </label>
-//             <button
-//               type="submit"
-//               className="secondary-button"
-//               disabled={addingFriend}
-//             >
-//               {addingFriend ? "Adding..." : "Add friend"}
-//             </button>
-//           </form>
-
-//           <div className="friend-list-wrapper">
-//             <h3>Friend list</h3>
-//             {friends.length === 0 ? (
-//               <p className="muted-text">No friends added yet.</p>
-//             ) : (
-//               <ul className="friend-list">
-//                 {friends.map((friend, index) => (
-//                   <li key={friend.id} className="friend-row">
-//                     <div>
-//                       <strong>
-//                         {index + 1}. {friend.label}
-//                       </strong>
-//                       <div className="small-text">{friend.postal_code}</div>
-//                     </div>
-//                     <button
-//                       type="button"
-//                       className="ghost-button"
-//                       onClick={() => handleRemoveFriend(friend.id)}
-//                     >
-//                       Remove
-//                     </button>
-//                   </li>
-//                 ))}
-//               </ul>
-//             )}
-//           </div>
-
-//           <h2>3. Compute MST</h2>
-//           <button
-//             type="button"
-//             className="primary-button full-width"
-//             onClick={handlePlanRoute}
-//             disabled={planningRoute}
-//           >
-//             {planningRoute ? "Computing MST..." : "Compute Prim MST"}
-//           </button>
-
-//           <div className="note-box">
-//             <strong>Note:</strong> the map shows the MST as straight line
-//             segments between geocoded points. This is a simple educational demo,
-//             not real road navigation.
-//           </div>
-
-//           {errorMessage && (
-//             <div className="info-box error-box">{errorMessage}</div>
-//           )}
-//         </section>
-
-//         <section className="panel map-panel">
-//           <div className="map-header">
-//             <div>
-//               <h2>Map view</h2>
-//               <p className="muted-text">Home is red. Friends are blue.</p>
-//             </div>
-//           </div>
-
-//           <div className="map-wrapper">
-//             <MapContainer
-//               center={DEFAULT_CENTER}
-//               zoom={12}
-//               scrollWheelZoom
-//               style={{ height: "100%", width: "100%" }}
-//             >
-//               <TileLayer
-//                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-//                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-//               />
-
-//               {markerItems.map((item) => (
-//                 <Marker
-//                   key={`${item.kind}-${item.postal_code}`}
-//                   position={[item.latitude, item.longitude]}
-//                   icon={item.kind === "home" ? homeIcon : friendIcon}
-//                 >
-//                   <Popup>
-//                     <strong>{item.label}</strong>
-//                     <br />
-//                     {item.postal_code}
-//                   </Popup>
-//                 </Marker>
-//               ))}
-
-//               {routeResult &&
-//                 routeResult.polyline_segments &&
-//                 routeResult.polyline_segments.map((segment, index) => (
-//                   <Polyline key={index} positions={segment} />
-//                 ))}
-
-//               <FitToMarkers positions={mapPositions} />
-//             </MapContainer>
-//           </div>
-
-//           <div className="results-grid">
-//             <div className="result-card">
-//               <h3>Algorithm used</h3>
-//               <p>{routeResult ? routeResult.algorithm_used : "—"}</p>
-//               <p className="small-text">
-//                 {routeResult
-//                   ? routeResult.algorithm_note
-//                   : "Compute the MST to see details."}
-//               </p>
-//             </div>
-
-//             <div className="result-card">
-//               <h3>Total tree distance</h3>
-//               <p>
-//                 {routeResult ? `${routeResult.total_tree_distance_km} km` : "—"}
-//               </p>
-//               <p className="small-text">Approximate MST weight.</p>
-//             </div>
-//           </div>
-
-//           <div className="sequence-card">
-//             <h3>Order vertices were added</h3>
-//             {!routeResult ? (
-//               <p className="muted-text">
-//                 The Prim order will appear here after computation.
-//               </p>
-//             ) : (
-//               <ol className="sequence-list">
-//                 {routeResult.ordered_stops.map((stop) => (
-//                   <li key={`${stop.sequence}-${stop.postal_code}`}>
-//                     <strong>{stop.label}</strong> — {stop.postal_code}
-//                     <span className="badge">{stop.stop_type}</span>
-//                   </li>
-//                 ))}
-//               </ol>
-//             )}
-//           </div>
-
-//           <div className="sequence-card">
-//             <h3>MST edges</h3>
-//             {!routeResult ? (
-//               <p className="muted-text">
-//                 The MST edges will appear here after computation.
-//               </p>
-//             ) : (
-//               <ul className="steps-list">
-//                 {routeResult.mst_edges.map((edge, index) => (
-//                   <li key={index}>
-//                     <div className="step-title">
-//                       {edge.from} → {edge.to}
-//                     </div>
-//                     <div className="small-text">
-//                       {edge.from_postal_code} → {edge.to_postal_code}
-//                     </div>
-//                     <div className="small-text">
-//                       Edge weight: {edge.distance_km} km
-//                     </div>
-//                   </li>
-//                 ))}
-//               </ul>
-//             )}
-//           </div>
-
-//           <div className="sequence-card">
-//             <h3>Execution steps</h3>
-//             {!routeResult ? (
-//               <p className="muted-text">Step-by-step execution appears here.</p>
-//             ) : (
-//               <ol className="steps-list">
-//                 {routeResult.steps.map((step) => (
-//                   <li key={step.step}>
-//                     <div className="step-title">
-//                       Step {step.step}: {step.from} → {step.to}
-//                     </div>
-//                     <div className="small-text">
-//                       Edge distance: {step.distance_km} km | Cumulative tree
-//                       weight: {step.cumulative_tree_distance_km} km
-//                     </div>
-//                     <div className="small-text">{step.reason}</div>
-//                   </li>
-//                 ))}
-//               </ol>
-//             )}
-//           </div>
-//         </section>
-//       </main>
-//     </div>
-//   );
-// }
-
 import { useEffect, useMemo, useState } from "react";
 
 const API_BASE_URL =
@@ -525,7 +6,7 @@ const API_BASE_URL =
 const styles = {
   page: {
     minHeight: "100vh",
-    background: "#f3f6fb",
+    background: "#f4f7fb",
     color: "#0f172a",
     fontFamily: "Inter, system-ui, Arial, sans-serif",
     padding: "20px",
@@ -536,7 +17,7 @@ const styles = {
   },
   hero: {
     background: "#ffffff",
-    border: "1px solid #d9e2ef",
+    border: "1px solid #dbe4f0",
     borderRadius: "22px",
     padding: "20px 22px",
     marginBottom: "18px",
@@ -555,13 +36,13 @@ const styles = {
   },
   grid: {
     display: "grid",
-    gridTemplateColumns: "310px 1fr",
+    gridTemplateColumns: "320px 1fr",
     gap: "18px",
     alignItems: "start",
   },
   card: {
     background: "#ffffff",
-    border: "1px solid #d9e2ef",
+    border: "1px solid #dbe4f0",
     borderRadius: "22px",
     boxShadow: "0 10px 28px rgba(15, 23, 42, 0.06)",
   },
@@ -675,7 +156,7 @@ const styles = {
   overlay: {
     position: "absolute",
     zIndex: 2,
-    background: "rgba(255,255,255,0.92)",
+    background: "rgba(255,255,255,0.94)",
     border: "1px solid #dbe4f0",
     borderRadius: "14px",
     boxShadow: "0 10px 24px rgba(15, 23, 42, 0.06)",
@@ -693,6 +174,18 @@ const styles = {
     borderRadius: "999px",
     fontWeight: 800,
     fontSize: "0.8rem",
+  },
+  statusBar: {
+    marginTop: "12px",
+    padding: "12px 14px",
+    borderRadius: "16px",
+    border: "1px solid #dbe4f0",
+    background: "#f8fbff",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "12px",
+    flexWrap: "wrap",
   },
   stepDots: {
     display: "flex",
@@ -776,12 +269,10 @@ function App() {
     const positions = {};
 
     if (total === 0) return positions;
-
     if (total === 1) {
       positions[people[0]] = { x: width / 2, y: height / 2 };
       return positions;
     }
-
     if (total === 2) {
       positions[people[0]] = { x: width * 0.33, y: height / 2 };
       positions[people[1]] = { x: width * 0.67, y: height / 2 };
@@ -819,23 +310,27 @@ function App() {
       info[result.start].discoveredFrom = "start";
     }
 
-    steps.slice(0, currentStepIndex + 1).forEach((step, index) => {
-      const stepNo = index + 1;
+    const discoveredOrder = result?.discovered_order || [];
+    discoveredOrder.forEach((name) => {
+      const firstDiscoveryStep = steps.findIndex((step) =>
+        (step.newly_discovered || []).includes(name),
+      );
 
-      if (info[step.current] && info[step.current].processedAt === null) {
-        info[step.current].processedAt = stepNo;
+      if (info[name] && firstDiscoveryStep !== -1) {
+        info[name].discoveredAt = firstDiscoveryStep + 1;
+        info[name].discoveredFrom = steps[firstDiscoveryStep].current;
       }
+    });
 
-      (step.newly_discovered || []).forEach((name) => {
-        if (info[name] && info[name].discoveredAt === null) {
-          info[name].discoveredAt = stepNo;
-          info[name].discoveredFrom = step.current;
-        }
-      });
+    const processedOrder = result?.processed_order || [];
+    processedOrder.forEach((name, index) => {
+      if (info[name]) {
+        info[name].processedAt = index + 1;
+      }
     });
 
     return info;
-  }, [people, result, steps, currentStepIndex]);
+  }, [people, result, steps]);
 
   function resetSimulationState() {
     setResult(null);
@@ -884,21 +379,12 @@ function App() {
     setPeople(updatedPeople);
     setFriendships(updatedFriendships);
 
-    if (startPerson === nameToRemove) {
-      setStartPerson(updatedPeople[0] || "");
-    }
-
-    if (targetPerson === nameToRemove) {
-      setTargetPerson(updatedPeople[0] || "");
-    }
-
-    if (friendshipSource === nameToRemove) {
+    if (startPerson === nameToRemove) setStartPerson(updatedPeople[0] || "");
+    if (targetPerson === nameToRemove) setTargetPerson(updatedPeople[0] || "");
+    if (friendshipSource === nameToRemove)
       setFriendshipSource(updatedPeople[0] || "");
-    }
-
-    if (friendshipTarget === nameToRemove) {
+    if (friendshipTarget === nameToRemove)
       setFriendshipTarget(updatedPeople[0] || "");
-    }
 
     resetSimulationState();
   }
@@ -971,18 +457,13 @@ function App() {
   async function runBfs() {
     setErrorMessage("");
 
-    if (people.length < 2) {
-      setErrorMessage("Add at least two people.");
-      return;
-    }
-
-    if (!friendships.length) {
-      setErrorMessage("Add at least one friendship.");
-      return;
-    }
-
     if (!startPerson || !targetPerson) {
       setErrorMessage("Choose both start and target.");
+      return;
+    }
+
+    if (people.length < 1) {
+      setErrorMessage("Add at least one person.");
       return;
     }
 
@@ -1058,7 +539,12 @@ function App() {
     const isTarget = result ? result.target === name : targetPerson === name;
     const isCurrent = currentStep?.current === name;
     const discoveredThisStep = currentStep?.newly_discovered?.includes(name);
-    const isVisited = currentStep?.visited_after?.includes(name) || false;
+    const isDiscovered = currentStep?.visited_after?.includes(name) || false;
+    const isProcessed = currentStep
+      ? (result?.processed_order || [])
+          .slice(0, currentStepIndex + 1)
+          .includes(name)
+      : false;
     const onFinalPath =
       currentStep?.target_found && currentStep?.path_so_far?.includes(name);
 
@@ -1066,9 +552,14 @@ function App() {
     let stroke = "#94a3b8";
     let strokeWidth = 2.5;
 
-    if (isVisited) {
+    if (isDiscovered) {
       fill = "#dbeafe";
       stroke = "#3b82f6";
+    }
+
+    if (isProcessed) {
+      fill = "#bfdbfe";
+      stroke = "#2563eb";
     }
 
     if (discoveredThisStep) {
@@ -1099,12 +590,6 @@ function App() {
     }
 
     return {
-      isStart,
-      isTarget,
-      isCurrent,
-      discoveredThisStep,
-      isVisited,
-      onFinalPath,
       fill,
       stroke,
       strokeWidth,
@@ -1114,8 +599,8 @@ function App() {
   function isPathEdge(a, b) {
     if (!currentStep?.target_found || !currentStep?.path_so_far?.length)
       return false;
-    const path = currentStep.path_so_far;
 
+    const path = currentStep.path_so_far;
     for (let i = 0; i < path.length - 1; i += 1) {
       const first = path[i];
       const second = path[i + 1];
@@ -1137,7 +622,20 @@ function App() {
   }
 
   const selectedNodeInfo = selectedNode ? nodeHistory[selectedNode] : null;
-  const selectedNodeNeighbors = result?.adjacency_list?.[selectedNode] || [];
+  const adjacencyList = result?.adjacency_list || {};
+  const selectedNodeNeighbors = adjacencyList[selectedNode] || [];
+  const summaryText = useMemo(() => {
+    if (!result) return "Build a graph and run BFS.";
+    if (result.result_type === "same-person") {
+      return `${result.start} is already the target.`;
+    }
+    if (result.found) {
+      return `${result.path.join(" → ")} (${result.hop_count} hop${
+        result.hop_count === 1 ? "" : "s"
+      })`;
+    }
+    return `No connection path from ${result.start} to ${result.target}.`;
+  }, [result]);
 
   return (
     <div style={styles.page}>
@@ -1148,8 +646,8 @@ function App() {
             Social Connection Finder
           </h1>
           <p style={{ margin: 0, color: "#475569", lineHeight: 1.5 }}>
-            Build a friendship graph, choose a start and target, then watch BFS
-            move level by level through the network.
+            Build your graph, pick a start and target, then watch BFS discover
+            people level by level.
           </p>
         </section>
 
@@ -1393,7 +891,11 @@ function App() {
               </span>
               <span>
                 <span style={{ ...styles.legendDot, background: "#3b82f6" }} />
-                visited
+                discovered
+              </span>
+              <span>
+                <span style={{ ...styles.legendDot, background: "#2563eb" }} />
+                processed
               </span>
               <span>
                 <span style={{ ...styles.legendDot, background: "#7c3aed" }} />
@@ -1419,7 +921,7 @@ function App() {
                     marginBottom: "6px",
                   }}
                 >
-                  Queue
+                  Queue before processing
                 </div>
                 <div style={styles.chipRow}>
                   {currentStep?.queue_before?.length ? (
@@ -1445,6 +947,7 @@ function App() {
                   top: 14,
                   right: 14,
                   padding: "10px 12px",
+                  minWidth: 250,
                 }}
               >
                 <div
@@ -1455,7 +958,7 @@ function App() {
                     marginBottom: "6px",
                   }}
                 >
-                  Current action
+                  Current step
                 </div>
                 {currentStep ? (
                   <>
@@ -1466,7 +969,7 @@ function App() {
                         marginBottom: "6px",
                       }}
                     >
-                      Process {currentStep.current}
+                      {currentStep.explanation}
                     </div>
                     <div style={styles.chipRow}>
                       {(currentStep.newly_discovered || []).length ? (
@@ -1494,43 +997,14 @@ function App() {
                 )}
               </div>
 
-              {currentStep?.target_found ? (
-                <div
-                  style={{
-                    ...styles.overlay,
-                    right: 14,
-                    bottom: 14,
-                    padding: "10px 12px",
-                    maxWidth: 360,
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: "0.78rem",
-                      color: "#64748b",
-                      fontWeight: 800,
-                      marginBottom: "6px",
-                    }}
-                  >
-                    Shortest path found
-                  </div>
-                  <div style={{ fontWeight: 900, fontSize: "1rem" }}>
-                    {currentStep.path_so_far.join(" → ")}
-                  </div>
-                  <div style={{ color: "#64748b", marginTop: "4px" }}>
-                    {Math.max(currentStep.path_so_far.length - 1, 0)} hop(s)
-                  </div>
-                </div>
-              ) : null}
-
               {selectedNode && nodePositions[selectedNode] ? (
                 <div
                   style={{
                     ...styles.overlay,
-                    left: Math.max(16, nodePositions[selectedNode].x - 90),
+                    left: Math.max(16, nodePositions[selectedNode].x - 95),
                     top: Math.max(82, nodePositions[selectedNode].y + 34),
                     padding: "10px 12px",
-                    width: 190,
+                    width: 210,
                   }}
                 >
                   <div
@@ -1563,12 +1037,6 @@ function App() {
                       lineHeight: 1.5,
                     }}
                   >
-                    {selectedNode === result?.start
-                      ? "Start node"
-                      : selectedNode === result?.target
-                        ? "Target node"
-                        : "Node"}
-                    <br />
                     Neighbors:{" "}
                     {selectedNodeNeighbors.length
                       ? selectedNodeNeighbors.join(", ")
@@ -1598,7 +1066,6 @@ function App() {
                 {friendships.map((edge) => {
                   const start = nodePositions[edge.source];
                   const end = nodePositions[edge.target];
-
                   if (!start || !end) return null;
 
                   let stroke = "#cbd5e1";
@@ -1668,14 +1135,25 @@ function App() {
               </svg>
             </div>
 
-            <div style={{ ...styles.controlsRow, marginTop: "12px" }}>
-              <div style={{ color: "#475569", fontWeight: 700 }}>
-                {currentStep
-                  ? currentStep.target_found
-                    ? `Target reached at step ${currentStep.step}`
-                    : `Visited: ${(currentStep.visited_after || []).join(", ")}`
-                  : "Click a node to see its details."}
+            <div style={styles.statusBar}>
+              <div>
+                <div style={{ fontWeight: 900, marginBottom: 4 }}>Result</div>
+                <div style={{ color: "#475569" }}>{summaryText}</div>
               </div>
+              {result ? (
+                <div style={styles.chipRow}>
+                  <StatusChip
+                    text={`Discovered: ${(result.discovered_order || []).join(" → ") || "—"}`}
+                    background="#eef2ff"
+                    color="#4338ca"
+                  />
+                  <StatusChip
+                    text={`Processed: ${(result.processed_order || []).join(" → ") || "—"}`}
+                    background="#eff6ff"
+                    color="#1d4ed8"
+                  />
+                </div>
+              ) : null}
             </div>
 
             {steps.length ? (
