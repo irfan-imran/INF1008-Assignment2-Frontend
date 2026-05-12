@@ -5,6 +5,7 @@ An interactive web application that visualises how the **Breadth-First Search (B
 Built with **React** + **FastAPI** for educational algorithm visualisation.
 
 Live Site: [https://inf-1008-assignment2-frontend.vercel.app/](https://inf-1008-assignment2-frontend.vercel.app/)
+
 Link to Backend Repo: [https://github.com/irfan-imran/INF1008-Assignment2-Backend](https://github.com/irfan-imran/INF1008-Assignment2-Backend)
 
 ---
