@@ -4,7 +4,7 @@ An interactive web application that visualises how the **Breadth-First Search (B
 
 Built with **React** + **FastAPI** for educational algorithm visualisation.
 
-Link to Backend Repo: [https://github.com/<your-username>/<backend-repo>](https://github.com/irfan-imran/INF1008-Assignment2-Backend)
+Link to Backend Repo: [https://github.com/irfan-imran/INF1008-Assignment2-Backend](https://github.com/irfan-imran/INF1008-Assignment2-Backend)
 
 ---
 
